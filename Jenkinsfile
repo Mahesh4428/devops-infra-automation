@@ -2,39 +2,33 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCESS_KEY_ID     = '<YOUR_AWS_ACCESS_KEY_ID>'
-        AWS_SECRET_ACCESS_KEY = '<YOUR_AWS_SECRET_ACCESS_KEY>'
+        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
     }
 
     stages {
         stage('Terraform Init') {
             steps {
-                dir('terraform') {
-                    sh 'terraform init'
-                }
+                sh 'terraform init'
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                dir('terraform') {
-                    sh 'terraform plan'
-                }
+                sh 'terraform plan'
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                dir('terraform') {
-                    sh 'terraform apply -auto-approve'
-                }
+                sh 'terraform apply -auto-approve'
             }
         }
 
         stage('Ansible Playbook') {
             steps {
+                // Optional: Only change this if ansible folder exists
                 dir('ansible') {
-                    // Let this fail — we’ll fix it later
                     sh 'ansible-playbook -i inventory install-k8s.yaml || true'
                 }
             }
@@ -50,4 +44,3 @@ pipeline {
         }
     }
 }
-
