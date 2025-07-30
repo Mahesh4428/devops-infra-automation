@@ -16,25 +16,13 @@ pipeline {
                 }
             }
         }
-
-        stage('Ansible Provision from Terraform Node') {
-            steps {
-                // SSH from Jenkins to Terraform instance and trigger Ansible
-                sh '''
-                    ssh -o StrictHostKeyChecking=no -i /home/ubuntu/newpem.pem ubuntu@13.233.144.101 '
-                        cd /home/ubuntu/devops-project/ansible &&
-                        ansible-playbook -i inventory.ini playbooks/jenkins.yml &&
-                        ansible-playbook -i inventory.ini playbooks/k8s.yml
-                    '
-                '''
-            }
-        }
-    }
-
-    post {
-        failure {
-            echo "❌ Pipeline failed. Check the console logs for errors."
+stage('Ansible Provision') {
+    steps {
+        dir('ansible') {
+            sh '''
+               ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbooks/jenkins.yml
+               ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbooks/k8s.yml
+            '''
         }
     }
 }
-
