@@ -1,46 +1,36 @@
 pipeline {
     agent any
 
-    environment {
-        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
-        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
-    }
-
     stages {
-        stage('Checkout') {
+        stage('Terraform Init & Apply') {
             steps {
-                git branch: 'main', url: 'https://github.com/Mahesh4428/devops-infra-automation.git'
-            }
-        }
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    dir('terraform') {
+                        sh '''
+                            echo "Initializing Terraform..."
+                            terraform init
 
-        stage('Terraform Init') {
-            steps {
-                dir('terraform') {
-                    sh 'terraform init'
+                            echo "Planning Terraform..."
+                            terraform plan
+
+                            echo "Applying Terraform..."
+                            terraform apply -auto-approve
+                        '''
+                    }
                 }
             }
         }
 
-        stage('Terraform Apply') {
-            steps {
-                dir('terraform') {
-                    sh 'terraform apply -auto-approve'
-                }
-            }
-        }
-
-        stage('Ansible Install Jenkins') {
+        stage('Ansible Provision') {
             steps {
                 dir('ansible') {
-                    sh 'ansible-playbook -i inventory.ini playbooks/jenkins.yml'
-                }
-            }
-        }
-
-        stage('Ansible Install Kubernetes') {
-            steps {
-                dir('ansible') {
-                    sh 'ansible-playbook -i inventory.ini playbooks/k8s.yml'
+                    sh '''
+                        echo "Running Ansible..."
+                        ansible-playbook -i inventory.ini playbooks/jenkins.yml
+                    '''
                 }
             }
         }
@@ -51,7 +41,7 @@ pipeline {
             echo "❌ Pipeline failed. Check the console logs for errors."
         }
         success {
-            echo "✅ Pipeline completed successfully!"
+            echo "✅ Pipeline completed successfully."
         }
     }
 }
