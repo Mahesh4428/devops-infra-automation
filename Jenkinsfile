@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'ap-south-1'
+        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
     }
 
     stages {
@@ -13,30 +14,25 @@ pipeline {
         }
 
         stage('Terraform Init') {
-            environment {
-                TF_IN_AUTOMATION = "1"
-            }
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                                  credentialsId: 'aws-creds',
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    dir('terraform') {
-                        sh 'terraform init'
-                    }
+                dir('.') {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir('.') {
+                    sh 'terraform plan'
                 }
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                                  credentialsId: 'aws-creds',
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    dir('terraform') {
-                        sh 'terraform apply -auto-approve'
-                    }
+                dir('.') {
+                    sh 'terraform apply -auto-approve'
                 }
             }
         }
@@ -44,7 +40,7 @@ pipeline {
         stage('Ansible - Jenkins Setup') {
             steps {
                 sh '''
-                    ansible-playbook -i inventory.ini ansible/jenkins-setup.yml
+                    ansible-playbook -i ansible/hosts.cfg ansible/jenkins.yml
                 '''
             }
         }
@@ -52,9 +48,18 @@ pipeline {
         stage('Ansible - K8s Setup') {
             steps {
                 sh '''
-                    ansible-playbook -i inventory.ini ansible/k8s-setup.yml
+                    ansible-playbook -i ansible/hosts.cfg ansible/k8s.yml
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo ' Infrastructure and Configuration completed successfully.'
+        }
+        failure {
+            echo ' Something went wrong in one of the stages.'
         }
     }
 }
