@@ -25,16 +25,21 @@ pipeline {
             }
         }
 
-        stage('Ansible Playbook') {
+        stage('Ansible Provision') {
             steps {
-                sh 'ansible-playbook -i inventory.ini playbook.yml'
+                dir('ansible') {
+                    sh 'ansible-playbook -i hosts.cfg jenkins.yml'
+                }
             }
         }
     }
 
     post {
+        success {
+            echo '✅ Infrastructure provisioned and configured successfully!'
+        }
         failure {
-            echo '🚨 Pipeline failed. Check the logs.'
+            echo '❌ Pipeline failed. Please check logs for details.'
         }
     }
 }
