@@ -1,6 +1,5 @@
-*tfstate*
-*plan*
-#ansible/
+terraform.tfstate
+terraform.tfstate.backup
+.plan
 .terraform/
 *.pem
-
