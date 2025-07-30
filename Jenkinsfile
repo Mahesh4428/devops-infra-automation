@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        TF_IN_AUTOMATION = "true"
+        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Mahesh4428/devops-infra-automation.git'
+                git branch: 'main', url: 'https://github.com/Mahesh4428/devops-infra-automation.git'
             }
         }
 
@@ -27,41 +27,38 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
+                input message: "Do you want to apply Terraform changes?"
                 sh 'terraform apply -auto-approve'
             }
         }
 
         stage('Ansible - Jenkins Setup') {
             steps {
-                script {
-                    if (fileExists('ansible/jenkins.yml')) {
-                        sh 'ansible-playbook -i ansible/hosts.cfg ansible/jenkins.yml'
-                    } else {
-                        error "Playbook ansible/jenkins.yml not found!"
-                    }
-                }
+                sh '''
+                ansible-playbook -i ansible/inventory.ini \
+                    --private-key ~/.ssh/newpem.pem \
+                    ansible/jenkins_setup.yml
+                '''
             }
         }
 
         stage('Ansible - K8s Setup') {
             steps {
-                script {
-                    if (fileExists('ansible/k8s.yml')) {
-                        sh 'ansible-playbook -i ansible/hosts.cfg ansible/k8s.yml'
-                    } else {
-                        error "Playbook ansible/k8s.yml not found!"
-                    }
-                }
+                sh '''
+                ansible-playbook -i ansible/inventory.ini \
+                    --private-key ~/.ssh/newpem.pem \
+                    ansible/k8s_setup.yml
+                '''
             }
         }
     }
 
     post {
-        failure {
-            echo "Pipeline failed. Check logs above."
-        }
         success {
-            echo "Pipeline completed successfully."
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Check the logs above.'
         }
     }
 }
