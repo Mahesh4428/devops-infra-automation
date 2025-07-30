@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         AWS_ACCESS_KEY_ID     = credentials('aws-creds')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-creds')
     }
 
     stages {
@@ -44,9 +45,6 @@ pipeline {
     }
 
     post {
-        success {
-            echo 'Infrastructure and Configuration completed successfully.'
-        }
         failure {
             echo 'Something went wrong in one of the stages.'
         }
