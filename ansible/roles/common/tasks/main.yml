@@ -1,0 +1,10 @@
+# ansible/roles/common/tasks/main.yml
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install basic packages
+  apt:
+    name: ['curl', 'apt-transport-https', 'ca-certificates', 'software-properties-common']
+    state: present
+

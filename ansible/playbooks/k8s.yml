@@ -1,0 +1,8 @@
+# ansible/k8s.yml
+- name: Setup Kubernetes Node
+  hosts: k8s
+  become: yes
+  roles:
+    - common
+    - k8s
+
