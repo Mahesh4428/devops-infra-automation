@@ -7,54 +7,51 @@ pipeline {
     }
 
     stages {
-
-        stage('Terraform Init') {
+        stage('Checkout') {
             steps {
-                echo '🔧 Initializing Terraform...'
-                sh 'terraform init'
+                git branch: 'main', url: 'https://github.com/Mahesh4428/devops-infra-automation.git'
             }
         }
 
-        stage('Terraform Plan') {
+        stage('Terraform Init') {
             steps {
-                echo '📝 Running Terraform Plan...'
-                sh 'terraform plan'
+                dir('terraform') {
+                    sh 'terraform init'
+                }
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                echo '🚀 Applying Terraform Configuration...'
-                sh 'terraform apply -auto-approve'
-            }
-        }
-
-        stage('Ansible - Jenkins Setup') {
-            steps {
-                echo '🔧 Running Ansible for Jenkins setup...'
-                dir('ansible') {
-                    sh 'ansible-playbook -i hosts.cfg jenkins.yml || true'
+                dir('terraform') {
+                    sh 'terraform apply -auto-approve'
                 }
             }
         }
 
-        stage('Ansible - Kubernetes Setup') {
+        stage('Ansible Install Jenkins') {
             steps {
-                echo '🔧 Running Ansible for Kubernetes setup...'
                 dir('ansible') {
-                    sh 'ansible-playbook -i hosts.cfg k8s.yml || true'
+                    sh 'ansible-playbook -i inventory.ini playbooks/jenkins.yml'
                 }
             }
         }
 
+        stage('Ansible Install Kubernetes') {
+            steps {
+                dir('ansible') {
+                    sh 'ansible-playbook -i inventory.ini playbooks/k8s.yml'
+                }
+            }
+        }
     }
 
     post {
-        success {
-            echo '✅ Pipeline completed successfully.'
-        }
         failure {
-            echo '❌ Pipeline failed. Check logs.'
+            echo "❌ Pipeline failed. Check the console logs for errors."
+        }
+        success {
+            echo "✅ Pipeline completed successfully!"
         }
     }
 }
