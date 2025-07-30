@@ -27,20 +27,15 @@ pipeline {
 
         stage('Ansible Playbook') {
             steps {
-                // Optional: Only change this if ansible folder exists
-                dir('ansible') {
-                    sh 'ansible-playbook -i inventory install-k8s.yaml || true'
-                }
+                sh 'ansible-playbook -i inventory.ini playbook.yml'
             }
         }
     }
 
     post {
         failure {
-            echo "🚨 Pipeline failed. Check the logs."
-        }
-        success {
-            echo "✅ Pipeline completed successfully."
+            echo '🚨 Pipeline failed. Check the logs.'
         }
     }
 }
+
