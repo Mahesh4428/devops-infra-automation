@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCESS_KEY_ID     = credentials('aws-creds')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-creds')
+        TF_IN_AUTOMATION = "true"
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                git branch: 'main', url: 'https://github.com/Mahesh4428/devops-infra-automation.git'
+                git branch: 'main',
+                    url: 'https://github.com/Mahesh4428/devops-infra-automation.git'
             }
         }
 
@@ -33,20 +33,35 @@ pipeline {
 
         stage('Ansible - Jenkins Setup') {
             steps {
-                sh 'ansible-playbook -i ansible/hosts.cfg ansible/jenkins.yml'
+                script {
+                    if (fileExists('ansible/jenkins.yml')) {
+                        sh 'ansible-playbook -i ansible/hosts.cfg ansible/jenkins.yml'
+                    } else {
+                        error "Playbook ansible/jenkins.yml not found!"
+                    }
+                }
             }
         }
 
         stage('Ansible - K8s Setup') {
             steps {
-                sh 'ansible-playbook -i ansible/hosts.cfg ansible/k8s.yml'
+                script {
+                    if (fileExists('ansible/k8s.yml')) {
+                        sh 'ansible-playbook -i ansible/hosts.cfg ansible/k8s.yml'
+                    } else {
+                        error "Playbook ansible/k8s.yml not found!"
+                    }
+                }
             }
         }
     }
 
     post {
         failure {
-            echo 'Something went wrong in one of the stages.'
+            echo "Pipeline failed. Check logs above."
+        }
+        success {
+            echo "Pipeline completed successfully."
         }
     }
 }
