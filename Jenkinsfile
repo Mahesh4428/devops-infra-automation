@@ -9,7 +9,7 @@ pipeline {
                 ]) {
                     dir('terraform') {
                         sh '''
-                            terraform init
+                            terraform init -input=false
                             terraform apply -auto-approve
                         '''
                     }
